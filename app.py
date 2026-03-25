@@ -1,40 +1,98 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI
+from fastapi import Request
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-import os
+from fastapi.responses import HTMLResponse
+
+from engine.divination import Divination
+from engine.pipeline import run
 
 app = FastAPI()
 
-BASE_DIR = os.path.dirname(__file__)
+
+import os
+BASE_DIR = os.path.dirname(__file__)  # app.py 所在目录
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
-# 挂载静态文件
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def home(request:Request):
 
-@app.post("/analyze", response_class=HTMLResponse)
+    return templates.TemplateResponse(
+
+    "index.html",
+
+    {"request":request}
+
+    )
+
+
+@app.post("/analyze")
 async def analyze(request: Request):
+
     form = await request.form()
+
     question = form["question"]
+
+    # coins = [
+
+    #     int(x)
+
+    #     for x in form["coins"].split(",")
+
+    # ]
     heads = form["coins"].split(",")
+
     coins = map_heads_to_lines(heads)
 
-    # 创建卦（示例）
-    # divination = Divination(question=question, coins=coins)
-    # divination.initialize()
-    # result = run(divination)
+    # 创建卦
 
-    result = "示例结果"  # 测试用
+    divination = Divination(
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "result": result
-    })
+        question=question,
 
+        coins=coins
+
+    )
+
+    divination.initialize()
+
+    # 运行推理
+
+    result = run(divination)
+
+    return templates.TemplateResponse(
+
+        "index.html",
+
+        {
+
+            "request":request,
+
+            "divination":divination,
+
+            "result":result
+
+        }
+
+    )
+    
 def map_heads_to_lines(heads):
-    mapping = {0: 8, 1: 7, 2: 9, 3: 6}
-    return [mapping[int(x)] for x in heads]
+
+    mapping = {
+
+        0:8,
+
+        1:7,
+
+        2:9,
+
+        3:6
+
+    }
+
+    return [
+
+        mapping[int(x)]
+
+        for x in heads
+
+    ]

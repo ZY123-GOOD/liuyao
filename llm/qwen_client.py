@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import QWEN_BASE_URL, QWEN_MODEL,API_key
+from config import QWEN_BASE_URL, QWEN_MODEL
 
 import os
 API_key = os.getenv("OPENAI_API_KEY")
