@@ -1,6 +1,6 @@
 # QWEN_BASE_URL="http://localhost:8000/v1"
 
-# QWEN_MODEL="/data/zhuyao/models/Qwen3.5-35B-A3B"
+# QWEN_MODEL=""
 
 # API_key="EMPTY"
 
