@@ -32,13 +32,22 @@ templates = Jinja2Templates(
 #     {"request":request}
 #     )
 
+# @app.get("/", response_class=HTMLResponse)
+# async def home(request: Request):
+#     return templates.TemplateResponse(
+#         name="index.html",  # 必须用 keyword
+#         context={
+#             "request": request
+#         }
+#     )
+
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+async def home(request:Request):
+
     return templates.TemplateResponse(
-        name="index.html",  # 必须用 keyword
-        context={
-            "request": request
-        }
+        "index.html",
+        {"request":request},
+        request=request   # ← 加这一行
     )
 
 
@@ -84,13 +93,31 @@ async def analyze(request: Request):
 
             "request":request,
 
-            "divination":divination,
+            "divination":divination.ui_data(),
 
             "result":result
 
-        }
+        },
+
+        request=request   # ← 加这一行
 
     )
+
+    # return templates.TemplateResponse(
+
+    #     "index.html",
+
+    #     {
+
+    #         "request":request,
+
+    #         "divination":divination,
+
+    #         "result":result
+
+    #     }
+
+    # )
     
 def map_heads_to_lines(heads):
 
