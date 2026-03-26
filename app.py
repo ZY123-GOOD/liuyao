@@ -22,12 +22,23 @@ templates = Jinja2Templates(
     directory=str(BASE_DIR / "templates")
 )
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request:Request):
 
+
+# @app.get("/", response_class=HTMLResponse)
+# async def home(request:Request):
+
+#     return templates.TemplateResponse(
+#     "index.html",
+#     {"request":request}
+#     )
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
     return templates.TemplateResponse(
-    "index.html",
-    {"request":request}
+        name="index.html",  # 必须用 keyword
+        context={
+            "request": request
+        }
     )
 
 
