@@ -9,9 +9,20 @@ from engine.pipeline import run
 app = FastAPI()
 
 
-import os
-BASE_DIR = os.path.dirname(__file__)  # app.py 所在目录
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+# import os
+# BASE_DIR = os.path.dirname(__file__)  # app.py 所在目录
+# templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+templates = Jinja2Templates(
+    directory=str(BASE_DIR / "templates")
+)
+
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request:Request):
