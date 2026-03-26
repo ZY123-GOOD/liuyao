@@ -1,18 +1,14 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from pathlib import Path
 
 from engine.divination import Divination
 from engine.pipeline import run
 
 app = FastAPI()
 
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 templates = Jinja2Templates(
-    directory=str(BASE_DIR / "templates")
+    directory="templates"
 )
 
 
