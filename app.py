@@ -76,13 +76,13 @@ def map_heads_to_lines(heads):
 
     mapping = {
 
-        0:8,
+        0:6,
 
-        1:7,
+        1:8,
 
-        2:9,
+        2:7,
 
-        3:6
+        3:9
 
     }
 

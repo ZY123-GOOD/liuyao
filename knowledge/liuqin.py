@@ -1,20 +1,37 @@
-from knowledge.wuxing import relation
+def get_relative(day, line):
 
-def get_relative(day_element,line_element):
+    table = {
 
-    r = relation(day_element,line_element)
+        ("木","木"):"兄弟",
+        ("木","火"):"子孙",
+        ("木","土"):"妻财",
+        ("木","金"):"官鬼",
+        ("木","水"):"父母",
 
-    if r=="same":
-        return "兄弟"
+        ("火","火"):"兄弟",
+        ("火","土"):"子孙",
+        ("火","金"):"妻财",
+        ("火","水"):"官鬼",
+        ("火","木"):"父母",
 
-    if r=="generate":
-        return "子孙"
+        ("土","土"):"兄弟",
+        ("土","金"):"子孙",
+        ("土","水"):"妻财",
+        ("土","木"):"官鬼",
+        ("土","火"):"父母",
 
-    if r=="generated_by":
-        return "父母"
+        ("金","金"):"兄弟",
+        ("金","水"):"子孙",
+        ("金","木"):"妻财",
+        ("金","火"):"官鬼",
+        ("金","土"):"父母",
 
-    if r=="control":
-        return "妻财"
+        ("水","水"):"兄弟",
+        ("水","木"):"子孙",
+        ("水","火"):"妻财",
+        ("水","土"):"官鬼",
+        ("水","金"):"父母",
 
-    if r=="controlled":
-        return "官鬼"
+    }
+
+    return table.get((day,line),"兄弟")  # 防止None
