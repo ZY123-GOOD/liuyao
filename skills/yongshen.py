@@ -48,9 +48,9 @@ def select_yongshen(divination, intent):
             if str(l.pos) in conflict.get("lines", []):
                 score -= 1
         # 六神影响
-        if l.six_spirit in ["白虎", "腾蛇", "玄武"]:
+        if l.liushen in ["白虎", "腾蛇", "玄武"]:
             score -= 2
-        if l.six_spirit in ["朱雀"]:
+        if l.liushen in ["朱雀"]:
             if intent in ["weather", "travel"]:
                 score += 1  # 天气/出行遇朱雀利晴
         # 静爻被动扣分
