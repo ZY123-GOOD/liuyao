@@ -1,4 +1,4 @@
-from datetime import datetime 
+from datetime import datetime
 from engine.coin import build_hexagram
 from engine.hexagram_builder import build
 from knowledge.calendar import get_day_branch, get_month_branch
@@ -26,12 +26,24 @@ class Divination:
         self.gender = gender
         self.datetime = dt if dt else datetime.now()
         self.coins = coins
+
+        # 卦爻信息
         self.original = self.transformed = self.lines = self.moving = None
+
+        # 时间与五行
         self.day_branch = self.month_branch = self.day_element = self.month_element = None
+
+        # 六神/空亡/冲合
         self.liu_shen = [None] * 6
         self.empty = []
         self.conflicts = []
-        self.base_name = self.trans_name = self.shi_yao = None
+
+        # 卦名/世应/卦宫
+        self.base_name = self.trans_name = self.hexagram_name = None
+        self.palace = None
+        self.shi_pos = None
+        self.ying_pos = None
+        self.shi_yao = None
 
     # -------------------- 卦生成 --------------------
     def cast(self):
@@ -55,26 +67,36 @@ class Divination:
     # -------------------- 爻生成/六亲/状态 --------------------
     def build_lines(self):
         """根据原始卦象和五行构建爻"""
-        # 使用 build 函数返回的原始卦象信息
         result = build(self.original, self.day_element)
-        self.lines = result["original_lines"]  # 这里获取的是原始的爻列表
-        for i, l in enumerate(self.lines):
-            l.number = self.original[i]  # 设置爻的原始数值
-            l.state = "平"  # 初始状态为“平”
+        self.lines = result["original_lines"]
 
-        self.shi_yao = self.lines[2]  # 默认第三爻为世爻
+        # 卦宫/世应/卦名
+        self.palace = result.get("palace", "未知")
+        self.shi_pos = result.get("shi_pos", 3)  # 默认第三爻为世爻
+        self.ying_pos = result.get("ying_pos", 6)  # 默认第六爻为应爻
+        self.hexagram_name = result.get("hexagram_name", "未知卦")
+
+        for i, l in enumerate(self.lines):
+            l.number = self.original[i]
+            l.state = "平"
+
+        self.shi_yao = self.lines[self.shi_pos - 1]  # 世爻
 
     def enrich_lines(self):
         """为每个爻填充五行和六亲等信息"""
         for l in self.lines:
             l.set_element(get_element(l.branch))
-            l.set_relative(get_relative(self.shi_yao.element, l.element))  # 用世爻计算六亲
+            # 用日主五行计算六亲
+            l.set_relative(get_relative(self.day_element, l.element))
             l.moving = (l.pos in self.moving)
 
     def mark_shi_ying(self):
         """标记世爻和应爻"""
-        self.lines[5].shi = True
-        self.lines[2].ying = True
+        for l in self.lines:
+            l.shi = False
+            l.ying = False
+        self.lines[self.shi_pos - 1].shi = True
+        self.lines[self.ying_pos - 1].ying = True
 
     def assign_liu_shen(self):
         """为每个爻指定六神"""
@@ -94,11 +116,7 @@ class Divination:
     # -------------------- 冲合 --------------------
     def analyze_conflicts(self):
         """分析冲合，检查卦爻之间以及日月支与卦爻的冲合"""
-        seen = set()
-
-        # Helper function for checking conflicts and combines
         def check_conflict_combine(branch1, branch2, i, j, conflict_type):
-            print(f"i,j: {i},{j}, branch1: {branch1}, branch2: {branch2}")  # 便于调试
             pair = (branch1, branch2)
             if pair in conflict_type:
                 return {"lines": (str(i + 1), str(j + 1)), "type": conflict_type[pair]}
@@ -110,22 +128,22 @@ class Divination:
         for i, l1 in enumerate(self.lines):
             for j, l2 in enumerate(self.lines):
                 if i >= j: continue
-                result = check_conflict_combine(l1.branch, l2.branch, i, j, CLASH)
-                if result:
-                    conflicts.append(result)
-                result = check_conflict_combine(l1.branch, l2.branch, i, j, COMBINE)
-                if result:
-                    conflicts.append(result)
+                res = check_conflict_combine(l1.branch, l2.branch, i, j, CLASH)
+                if res:
+                    conflicts.append(res)
+                res = check_conflict_combine(l1.branch, l2.branch, i, j, COMBINE)
+                if res:
+                    conflicts.append(res)
 
         # 日支/月支与卦爻的冲合
         for i, l in enumerate(self.lines):
-            for t, branch in [("日", self.day_branch), ("月", self.month_branch)]:
-                result = check_conflict_combine(branch, l.branch, i, l.pos, CLASH)
-                if result:
-                    conflicts.append(result)
-                result = check_conflict_combine(branch, l.branch, i, l.pos, COMBINE)
-                if result:
-                    conflicts.append(result)
+            for branch in [self.day_branch, self.month_branch]:
+                res = check_conflict_combine(branch, l.branch, i, l.pos, CLASH)
+                if res:
+                    conflicts.append(res)
+                res = check_conflict_combine(branch, l.branch, i, l.pos, COMBINE)
+                if res:
+                    conflicts.append(res)
 
         self.conflicts = conflicts
 
@@ -170,6 +188,10 @@ class Divination:
             "conflicts": self.conflicts,
             "base_name": self.base_name,
             "trans_name": self.trans_name,
+            "hexagram_name": self.hexagram_name,
+            "palace": self.palace,
+            "shi_pos": self.shi_pos,
+            "ying_pos": self.ying_pos,
             "lines": [{
                 "pos": l.pos,
                 "branch": l.branch,
