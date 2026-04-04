@@ -7,18 +7,38 @@ API_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=API_key, base_url=QWEN_BASE_URL)
 
 def parse_intent(question):
+    """
+    问题分类增强版
+    支持人事类、财务类、健康、考试，以及天气/出行类问题
+    """
+    categories = [
+        "career",       # 职业、升迁、工作
+        "wealth",       # 财富、财务
+        "exam",         # 考试、学业
+        "relationship", # 感情、人际
+        "health",       # 健康、医疗
+        "investment",   # 投资理财
+        "travel",       # 出行、旅游
+        "weather"       # 天气、气候
+    ]
+    
     prompt = f"""
 问题分类：
-career, wealth, exam, relationship, health, investment
+{', '.join(categories)}
+请根据问题内容选择最合适的分类，只返回一个分类词，不要解释。
 问题：{question}
-只返回一个分类词
 """
     r = client.chat.completions.create(
         model=QWEN_MODEL,
         temperature=0,
         messages=[{"role":"user","content":prompt}]
     )
-    return r.choices[0].message.content.strip()
+    intent = r.choices[0].message.content.strip()
+    
+    # 如果返回不在分类内，默认 "wealth"
+    if intent not in categories:
+        intent = "wealth"
+    return intent
 
 def explain(rule_result):
 
