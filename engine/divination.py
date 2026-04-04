@@ -1,67 +1,52 @@
-from datetime import datetime
+from datetime import datetime 
 from engine.coin import build_hexagram
 from engine.hexagram_builder import build
 from knowledge.calendar import get_day_branch, get_month_branch
 from knowledge.branches import get_element
 from knowledge.liuqin import get_relative
 
-LIU_SHEN_ORDER = ["青龙","朱雀","勾陈","腾蛇","白虎","玄武"]
+LIU_SHEN_ORDER = ["青龙", "朱雀", "勾陈", "腾蛇", "白虎", "玄武"]
 
 EMPTY_BRANCH = {
-    "甲子":["戌","亥"], "乙丑":["戌","亥"], "丙寅":["子","丑"],
-    "丁卯":["子","丑"], "戊辰":["寅","卯"], "己巳":["寅","卯"],
-    "庚午":["辰","巳"], "辛未":["辰","巳"], "壬申":["午","未"],
-    "癸酉":["午","未"], "甲戌":["申","酉"], "乙亥":["申","酉"]
+    "甲子": ["戌", "亥"], "乙丑": ["戌", "亥"], "丙寅": ["子", "丑"],
+    "丁卯": ["子", "丑"], "戊辰": ["寅", "卯"], "己巳": ["寅", "卯"],
+    "庚午": ["辰", "巳"], "辛未": ["辰", "巳"], "壬申": ["午", "未"],
+    "癸酉": ["午", "未"], "甲戌": ["申", "酉"], "乙亥": ["申", "酉"]
 }
 
-CLASH = {("子","午"):"冲", ("午","子"):"冲", ("寅","申"):"冲", ("申","寅"):"冲",
-         ("巳","亥"):"冲", ("亥","巳"):"冲", ("卯","酉"):"冲", ("酉","卯"):"冲"}
-COMBINE = {("子","丑"):"合", ("丑","子"):"合", ("寅","亥"):"合", ("亥","寅"):"合"}
+CLASH = {("子", "午"): "冲", ("午", "子"): "冲", ("寅", "申"): "冲", ("申", "寅"): "冲",
+         ("巳", "亥"): "冲", ("亥", "巳"): "冲", ("卯", "酉"): "冲", ("酉", "卯"): "冲"}
+
+COMBINE = {("子", "丑"): "合", ("丑", "子"): "合", ("寅", "亥"): "合", ("亥", "寅"): "合"}
+
 
 class Divination:
-
     def __init__(self, question, gender=None, dt=None, coins=None):
         self.question = question
         self.gender = gender
         self.datetime = dt if dt else datetime.now()
         self.coins = coins
-
-        self.original = None
-        self.transformed = None
-        self.lines = None
-        self.moving = None
-
-        self.day_branch = None
-        self.month_branch = None
-        self.day_element = None
-        self.month_element = None
-
-        self.liu_shen = [None]*6
+        self.original = self.transformed = self.lines = self.moving = None
+        self.day_branch = self.month_branch = self.day_element = self.month_element = None
+        self.liu_shen = [None] * 6
         self.empty = []
         self.conflicts = []
-
-        self.base_name = None
-        self.trans_name = None
-
-        self.shi_yao = None  # 世爻，用于六亲计算
+        self.base_name = self.trans_name = self.shi_yao = None
 
     # -------------------- 卦生成 --------------------
     def cast(self):
+        """生成原始卦象"""
         self.original = self.coins if self.coins else build_hexagram()
-        self.moving = [i+1 for i,v in enumerate(self.original) if v in [6,9]]
+        self.moving = [i + 1 for i, v in enumerate(self.original) if v in [6, 9]]
         self.transformed = self.transform()
 
     def transform(self):
-        new = []
-        for i, l in enumerate(self.original):
-            val = 7 if l == 6 else 8 if l == 9 else l
-            new.append(val)
-            if self.lines:
-                self.lines[i].number = l
-        return new
+        """转换卦象，将6和9转换为7和8"""
+        return [7 if l == 6 else 8 if l == 9 else l for l in self.original]
 
     # -------------------- 时间/五行 --------------------
     def calc_time(self):
+        """计算并设置日支、月支、日五行、月五行"""
         self.day_branch = get_day_branch(self.datetime)
         self.month_branch = get_month_branch(self.datetime)
         self.day_element = get_element(self.day_branch)
@@ -69,33 +54,37 @@ class Divination:
 
     # -------------------- 爻生成/六亲/状态 --------------------
     def build_lines(self):
-        self.lines = build(self.original, self.day_element)
-        for i,l in enumerate(self.lines):
-            l.number = self.original[i]
-            l.state = "平"
+        """根据原始卦象和五行构建爻"""
+        # 使用 build 函数返回的原始卦象信息
+        result = build(self.original, self.day_element)
+        self.lines = result["original_lines"]  # 这里获取的是原始的爻列表
+        for i, l in enumerate(self.lines):
+            l.number = self.original[i]  # 设置爻的原始数值
+            l.state = "平"  # 初始状态为“平”
 
-        # 默认第三爻为世爻
-        self.shi_yao = self.lines[2]
+        self.shi_yao = self.lines[2]  # 默认第三爻为世爻
 
     def enrich_lines(self):
+        """为每个爻填充五行和六亲等信息"""
         for l in self.lines:
             l.set_element(get_element(l.branch))
-            # 用世爻计算六亲
-            l.set_relative(get_relative(self.shi_yao.element, l.element))
+            l.set_relative(get_relative(self.shi_yao.element, l.element))  # 用世爻计算六亲
             l.moving = (l.pos in self.moving)
-            # state 已初始化为平，可在后续空亡/冲合中更新
 
     def mark_shi_ying(self):
+        """标记世爻和应爻"""
         self.lines[5].shi = True
         self.lines[2].ying = True
 
     def assign_liu_shen(self):
-        for i,l in enumerate(self.lines):
-            l.liushen = LIU_SHEN_ORDER[i%6]
+        """为每个爻指定六神"""
+        for i, l in enumerate(self.lines):
+            l.liushen = LIU_SHEN_ORDER[i % 6]
             self.liu_shen[i] = l.liushen
 
     # -------------------- 空亡 --------------------
     def assign_empty(self):
+        """计算并标记空亡爻"""
         empty_branches = EMPTY_BRANCH.get(self.day_branch, [])
         self.empty = [l.pos for l in self.lines if l.branch in empty_branches]
         for l in self.lines:
@@ -104,42 +93,60 @@ class Divination:
 
     # -------------------- 冲合 --------------------
     def analyze_conflicts(self):
-        conflicts = []
+        """分析冲合，检查卦爻之间以及日月支与卦爻的冲合"""
         seen = set()
-        # 卦爻之间
-        for i,l1 in enumerate(self.lines):
-            for j,l2 in enumerate(self.lines):
-                if i>=j: continue
-                pair = (l1.branch, l2.branch)
-                if pair in CLASH and pair not in seen:
-                    conflicts.append({"lines":(i+1,j+1),"type":"冲"})
-                    seen.add(pair)
-                elif pair in COMBINE and pair not in seen:
-                    conflicts.append({"lines":(i+1,j+1),"type":"合"})
-                    seen.add(pair)
-        # 日支/月支与卦爻冲合
-        for i,l in enumerate(self.lines):
+
+        # Helper function for checking conflicts and combines
+        def check_conflict_combine(branch1, branch2, i, j, conflict_type):
+            print(f"i,j: {i},{j}, branch1: {branch1}, branch2: {branch2}")  # 便于调试
+            pair = (branch1, branch2)
+            if pair in conflict_type:
+                return {"lines": (str(i + 1), str(j + 1)), "type": conflict_type[pair]}
+            return None
+
+        conflicts = []
+
+        # 卦爻之间的冲合
+        for i, l1 in enumerate(self.lines):
+            for j, l2 in enumerate(self.lines):
+                if i >= j: continue
+                result = check_conflict_combine(l1.branch, l2.branch, i, j, CLASH)
+                if result:
+                    conflicts.append(result)
+                result = check_conflict_combine(l1.branch, l2.branch, i, j, COMBINE)
+                if result:
+                    conflicts.append(result)
+
+        # 日支/月支与卦爻的冲合
+        for i, l in enumerate(self.lines):
             for t, branch in [("日", self.day_branch), ("月", self.month_branch)]:
-                pair = (branch, l.branch)
-                if pair in CLASH and pair not in seen:
-                    conflicts.append({"lines":(t,l.pos),"type":"冲"})
-                    seen.add(pair)
-                elif pair in COMBINE and pair not in seen:
-                    conflicts.append({"lines":(t,l.pos),"type":"合"})
-                    seen.add(pair)
+                result = check_conflict_combine(branch, l.branch, i, l.pos, CLASH)
+                if result:
+                    conflicts.append(result)
+                result = check_conflict_combine(branch, l.branch, i, l.pos, COMBINE)
+                if result:
+                    conflicts.append(result)
+
         self.conflicts = conflicts
 
     # -------------------- 卦名 --------------------
+    def generate_hexagram_name(self, hexagram):
+        """根据卦象生成卦名"""
+        return "".join(["阳" if n in [7, 9] else "阴" for n in hexagram])
+
     def assign_hexagram_names(self):
-        lower = "".join(["阳" if n in [7,9] else "阴" for n in self.original[:3]])
-        upper = "".join(["阳" if n in [7,9] else "阴" for n in self.original[3:]])
+        """生成卦名"""
+        lower = self.generate_hexagram_name(self.original[:3])
+        upper = self.generate_hexagram_name(self.original[3:])
         self.base_name = f"上{upper}下{lower}"
-        lower_t = "".join(["阳" if n in [7,9] else "阴" for n in self.transformed[:3]])
-        upper_t = "".join(["阳" if n in [7,9] else "阴" for n in self.transformed[3:]])
+
+        lower_t = self.generate_hexagram_name(self.transformed[:3])
+        upper_t = self.generate_hexagram_name(self.transformed[3:])
         self.trans_name = f"上{upper_t}下{lower_t}"
 
     # -------------------- 初始化 --------------------
     def initialize(self):
+        """初始化六爻占卜的各项数据"""
         self.cast()
         self.calc_time()
         self.build_lines()
@@ -152,6 +159,7 @@ class Divination:
 
     # -------------------- UI 数据 --------------------
     def ui_data(self):
+        """返回用于前端显示的数据"""
         return {
             "question": self.question,
             "coins": self.original,
@@ -162,22 +170,21 @@ class Divination:
             "conflicts": self.conflicts,
             "base_name": self.base_name,
             "trans_name": self.trans_name,
-            "lines":[
-                {
-                    "pos":l.pos,
-                    "branch":l.branch,
-                    "element":l.element,
-                    "relative":l.relative,
-                    "moving":l.moving,
-                    "shi":l.shi,
-                    "ying":l.ying,
-                    "liushen":l.liushen,
-                    "state":l.state,
-                    "number":l.number
-                } for l in self.lines
-            ],
+            "lines": [{
+                "pos": l.pos,
+                "branch": l.branch,
+                "element": l.element,
+                "relative": l.relative,
+                "moving": l.moving,
+                "shi": l.shi,
+                "ying": l.ying,
+                "liushen": l.liushen,
+                "state": l.state,
+                "number": l.number
+            } for l in self.lines],
             "liu_shen_order": self.liu_shen
         }
 
     def summary(self):
+        """返回占卜的整体结果数据"""
         return self.ui_data()

@@ -1,39 +1,34 @@
 class Line:
-
-    def __init__(
-
-        self,
+    def __init__(self,
         pos,
         branch,
         day_element,
-        moving=False,
-        shi=False,
-        ying=False
-
+        yin_yang,
+        number,
+        moving=False
     ):
 
         self.pos=pos
 
         self.branch=branch
 
-        self.element=None
-
-        self.relative=None
-
-        self.moving=moving
-
-        self.shi=shi
-
-        self.ying=ying
-
         self.day_element=day_element
 
+        self.yin_yang=yin_yang
 
-    def set_element(self,element):
+        self.number=number
 
-        self.element=element
+        self.moving=moving
+        self.element = None
+        self.state=None
 
+        self.relative=None
+        self.shi = False  # 标记是否为世爻
+        self.ying = False  # 标记是否为应爻
+        self.liushen=None
 
-    def set_relative(self,relative):
+    def set_element(self, element):
+        self.element = element
 
-        self.relative=relative
+    def set_relative(self, relative):
+        self.relative = relative
