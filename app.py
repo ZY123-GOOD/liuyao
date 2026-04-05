@@ -72,24 +72,53 @@ async def analyze(request: Request):
     )
 
 
+# def map_heads_to_lines(heads):
+
+#     mapping = {
+
+#         0:6,
+
+#         1:7,
+
+#         2:8,
+
+#         3:9
+
+#     }
+
+#     return [
+
+#         mapping[int(x)]
+
+#         for x in heads
+
+#     ]
+
 def map_heads_to_lines(heads):
 
     mapping = {
 
         0:6,
-
-        1:8,
-
-        2:7,
-
+        1:7,
+        2:8,
         3:9
 
     }
 
-    return [
+    if len(heads) != 6:
 
-        mapping[int(x)]
+        raise ValueError("必须6爻")
 
-        for x in heads
+    lines=[]
 
-    ]
+    for h in heads:
+
+        h=int(h)
+
+        if h not in mapping:
+
+            raise ValueError("正面数量必须0-3")
+
+        lines.append(mapping[h])
+
+    return lines
