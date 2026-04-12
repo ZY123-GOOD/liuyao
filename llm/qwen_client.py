@@ -40,45 +40,6 @@ def parse_intent(question):
         intent = "wealth"
     return intent
 
-def explain(rule_result):
-
-    prompt=f"""
-    你是专业六爻命理师。
-
-    规则引擎已经完成推理，你的任务是：
-
-    解释推理依据。
-
-    不要重新判断吉凶。
-
-    只解释为什么。
-
-    规则推理结果：
-
-    {rule_result}
-
-    要求：
-
-    说明：
-
-    用神是谁
-
-    为什么旺或弱
-
-    哪些因素加分
-
-    哪些因素减分
-
-    写成专业断语。
-
-    """
-    r = client.chat.completions.create(
-        model=QWEN_MODEL,
-        temperature=0,
-        messages=[{"role":"user","content":prompt}]
-    )
-    return r.choices[0].message.content
-
 
 def explain_step_by_step(
 
@@ -99,10 +60,43 @@ def explain_step_by_step(
     """
 
     prompt = f"""
-    你是专业六爻命理师，请严格按照六爻断卦逻辑，逐步解释推算过程。
+            你是专业六爻命理师，请严格按照六爻断卦逻辑，逐步解释推算过程。
 
-    要求：
-    必须按规则推理解释，不要只描述数据。
+            用户问题：
+            {divination.question}
+
+            【起卦数据】
+            铜钱：{divination.original}
+            动爻：{divination.moving}
+            本卦：{divination.lines}
+            变卦：{divination.transformed}
+
+            【时间】
+            日支：{divination.day_branch} 日五行：{divination.day_element}
+            月支：{divination.month_branch} 月五行：{divination.month_element}
+
+            【六神】{divination.liu_shen}
+            【空亡】{divination.empty}
+            【冲合】{divination.conflicts}
+            【用神】{yongshen}
+            【用神旺衰】{yongshen_analysis}
+            【规则推理结果】{rule_result}
+
+            要求：
+            1. 按编号顺序输出，每一步用 ### 标题，内容用段落说明。
+            2. 不使用箭头或表格，全部用中文自然文字。
+            3. 用神分析必须引用具体爻位、爻象、五行、六亲、六神状态，说明得分来源。
+            4. 变卦分析必须解释原卦→变卦的趋势和可能结果。
+            5. 输出最终结论格式：
+            - 结果：吉/中/凶
+            - 原因：用神状态总结
+            - 趋势：事情发展判断
+    """
+    
+
+
+    prompt = f"""
+    你是专业六爻命理师，请严格按照六爻断卦逻辑，逐步解释推算过程。
 
     用户问题：
     {divination.question}
@@ -111,58 +105,41 @@ def explain_step_by_step(
 
     铜钱：
     {divination.original}
-
     动爻：
     {divination.moving}
-
     本卦：
     {divination.lines}
-
     变卦：
     {divination.transformed}
 
     【时间】
-
     日支：
     {divination.day_branch}
-
     日五行：
     {divination.day_element}
-
     月支：
     {divination.month_branch}
-
     月五行：
     {divination.month_element}
 
     【六神】
-
     {divination.liu_shen}
 
     【空亡】
-
     {divination.empty}
-
     【冲合】
 
     {divination.conflicts}
-
     【用神】
 
     {yongshen}
-
     【用神旺衰】
 
     {yongshen_analysis}
-
     【规则推理结果】
 
     {rule_result}
-
-    要求：
-
-    必须按六爻真实推理顺序解释：
-
+    要求：根据上述信息，必须按六爻真实推理顺序解释：
     ### 1 记录时间
     说明月建日辰对五行影响
 
@@ -189,7 +166,6 @@ def explain_step_by_step(
 
     ### 9 用神分析（重点）
     必须解释：
-
     用神是否旺  
     是否受克  
     是否空亡  
@@ -230,6 +206,9 @@ def explain_step_by_step(
     不要使用箭头符号。
     用纯Markdown。
     """
+    
+    
+    
     r = client.chat.completions.create(
         model=QWEN_MODEL,
         temperature=0,
